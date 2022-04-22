@@ -8,6 +8,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0  # all branches and tags; needed for version string
+      
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
 
       - name: Print the describe-version
         run: |
@@ -17,21 +20,30 @@ jobs:
         id: check_release_conditions
         run: |
           release_version="$(tools/describe-version)"
-          if [[ "$release_version" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "::notice::Release version: $release_version"
-            echo "::set-output name=release_version::$release_version"
-          else
+          if [[ ! "$release_version" =~ ^[0-9]+(\.[0-9]+)*(\.post[0-9]+)?$ ]]; then
             echo "::error::This is not a release. To create a release, tag a commit with a release version, e.g.: git tag -a -m v1.2.3 v1.2.3; git push --tags"
             false
           fi
+          pyproject_version="$(poetry version -s)"
+          if [[ "$release_version" != "$pyproject_version" ]]; then
+            echo "::error::Tagged version does not match the version in pyproject.toml. Edit pyproject.toml and set `version = \"$release_version\"`."
+            echo "::error::You will probably have to create a new tag OR move the existing tag after you commit this change--make sure the new tag matches the new version!"
+            false
+          fi
+          echo "::notice::Release version: $release_version"
+          echo "::set-output name=release_version::$release_version"
 
       - name: Package release
-        run: make tarball
+        id: package_release
+        run: |
+          make sdist
+          echo "::set-output name=release_artifacts::$(make print-release-artifacts)"
 
-      - name: Create GitHub release with gh  ## (replace the tarball name below)
+      - name: Create GitHub release with gh
         run: |
           link=$(tools/release \
             "${{ steps.check_release_conditions.outputs.release_version }}" \
             "${{ secrets.GITHUB_TOKEN }}" \
-            "your-cool-project-${{ steps.check_release_conditions.outputs.release_version }}.tar.gz")
+            ${{ steps.package_release.outputs.release_artifacts }}
+            )
           echo "::notice::Release link: $link"

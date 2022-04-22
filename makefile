@@ -1,25 +1,33 @@
 #!/usr/bin/env make
 
-SHELL 	:= /usr/bin/env bash
-PROG 	:= your-cool-program  ## (replace)
-VERSION := $(shell tools/describe-version)
-TARBALL := $(PROG)-$(VERSION).tar.gz
+SHELL             := /usr/bin/bash
+PROG              := db-user-management
+SOURCES           := src/**/*.py test/*.py pyproject.toml poetry.lock pytest.ini tox.ini
+TAGGED_VERSION    := $(shell tools/describe-version)
+PYPROJECT_VERSION := $(shell poetry version -s)
+SDIST             := dist/$(PROG)-$(PYPROJECT_VERSION).tar.gz
+WHEEL             := dist/$(PROG)-$(PYPROJECT_VERSION)-py3-none-any.whl
 
-.PHONY: clean test tarball
+.PHONY: clean test sdist
 
+$(SDIST) $(WHEEL): $(SOURCES)
+	@if [[ $(TAGGED_VERSION) != $(PYPROJECT_VERSION) ]]; then \
+		echo "** Warning: pyproject.toml version $(PYPROJECT_VERSION) != git tag version $(TAGGED_VERSION)" 1>&2; \
+		echo "** The files produced cannot be released" 1>&2; \
+	fi
+	poetry build
 
-all: $(PROG)
+print-release-artifacts: $(SDIST) $(WHEEL)
+	@echo $(SDIST) $(WHEEL)
 
-$(PROG): your.source.files  ## (replace)
-	build-your-prog  ## (replace)
-
-$(TARBALL): $(PROG)
-	tar cfz $@ $^ && tar tvfz $@
-
-tarball: $(TARBALL)
+sdist: $(SDIST) $(WHEEL)
 
 clean:
-	rm -f $(PROG) $(TARBALL)
+	rm -f $(SDIST) $(WHEEL)
 
 test:
-	run-some-tests  ## (replace)
+	tox
+
+format:
+	black src test
+	isort src test
