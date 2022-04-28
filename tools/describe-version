@@ -6,7 +6,9 @@ set -euo pipefail
 IFS=$'\n\t'
 
 git-describe() {
-    git describe --tags --abbrev=0 --match 'v*' "$@" 2>/dev/null
+    ret=$(git describe --tags --abbrev=0 --match 'v*' "$@" 2>/dev/null)
+    # strip the `v` from the version as stored in the tags
+    echo ${ret#v}
 }
 
 version="$(git-describe --exact-match || true)"
