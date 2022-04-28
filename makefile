@@ -26,7 +26,7 @@ clean:
 	rm -f $(SDIST) $(WHEEL)
 
 test:
-	true
+	tox
 
 format:
 	black src test
