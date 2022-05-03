@@ -13,9 +13,13 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
 
 
+def add(x):
+    return x + 1
+
+
 class ManageUsers(ACL):
-    def __init__(self, host, port, auth_user, auth_password) -> None:
-        super().__init__(host, port, auth_user, auth_password)
+    def __init__(self, asadm_config, asadm_user, asadm_password) -> None:
+        super().__init__(asadm_config, asadm_user, asadm_password)
         self.users = self.get_users()
         self.changed = False
 
@@ -108,10 +112,10 @@ class ManageUsers(ACL):
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        host=dict(type="str", required=True),
-        port=dict(type="int", required=False, default=3000),
-        auth_user=dict(type="str", required=False, default="admin"),
-        auth_password=dict(type="str", required=False, default="admin"),
+        asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf")
+        asadm_cluster=dict(type="str", required=False, default="test"),
+        asadm_user=dict(type="str", required=False, default="admin"),
+        asadm_password=dict(type="str", required=False, default="admin"),
         user=dict(type="str", required=True),
         password=dict(type="str", required=False),
         state=dict(type="str", required=False, choices=["present", "absent"], default="present"),
@@ -138,10 +142,10 @@ def run_module():
         module.exit_json(**result)
 
     mg = ManageUsers(
-        module.params["host"],
-        module.params["port"],
-        module.params["auth_user"],
-        module.params["auth_password"],
+        module.params["asadm_config"],
+        module.params["asadm_cluster"],
+        module.params["asadm_user"],
+        module.params["asadm_password"],
     )
     res = mg.manage_user(
         module.params["user"],

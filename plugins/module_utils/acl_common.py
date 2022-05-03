@@ -5,27 +5,23 @@ from subprocess import run
 
 
 class ACL:
-    def __init__(self, host, port, auth_user, auth_password) -> None:
-        self.host = host
-        self.port = port
-        self.auth_user = auth_user
-        self.auth_password = auth_password
+    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password) -> None:
+        self.asadm_config = asadm_config
+        self.asadm_cluster = asadm_cluster
+        self.asadm_user = asadm_user
+        self.asadm_password = asadm_password
         self.failed = False
 
     def execute_cmd(self, command):
-        # TODO add a timeout?
-        # TODO error handling, define error messages
         cmd = [
             "asadm",
-            f"--host={self.host}",
-            f"--port={self.port}",
-            "--no-config-file",
-            f"--user={self.auth_user}",
-            f"--password={self.auth_password}",
+            f"--config-file={self.asadm_config}",
+            f"--user={self.asadm_user}",
+            f"--password={self.asadm_password}",
+            f"--instance={self.asadm_cluster}",
             "-e",
             command,
             "--json",
-            # TODO ref instance and optionally set host/noconfig?
         ]
         p = run(
             cmd,
@@ -44,8 +40,8 @@ class ACL:
         return error
 
     def _parse_results(self, results):
-        # TODO look at underlying code to understand if the top two lines are always metadata
+        # TODO look at underlying code to understand if the top three lines are always metadata
         try:
-            return json.loads("\n".join(results.split("\n")[2:]))
+            return json.loads("\n".join(results.split("\n")[3:]))
         except json.decoder.JSONDecodeError:
             return results
