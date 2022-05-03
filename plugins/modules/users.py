@@ -21,7 +21,7 @@ class ManageUsers(ACL):
 
     def get_users(self):
         users = {}
-        # TODO this is fragile rethink
+        # For users there will only every be a single group
         for record in self.execute_cmd("show users")["groups"][0]["records"]:
             if record["Roles"]["raw"] == "null":
                 users[record["User"]["raw"]] = []

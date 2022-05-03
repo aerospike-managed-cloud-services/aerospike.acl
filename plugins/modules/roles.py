@@ -22,6 +22,7 @@ class ManageRoles(ACL):
 
     def get_roles(self):
         roles = {}
+        # For roles there will only every be a single group
         for record in self.execute_cmd("show roles")["groups"][0]["records"]:
             if record["Role"]["raw"] == "null":
                 roles[record["Role"]["raw"]] = []
@@ -46,6 +47,7 @@ class ManageRoles(ACL):
         return f"Role {role} does not exist so can't be deleted"
 
     def create_role(self, role, privileges):
+        # Unfortunately we can only grant a single privelege at a time
         priv = ""
         if privileges:
             priv = privileges[0]
@@ -54,7 +56,7 @@ class ManageRoles(ACL):
         if self.failed:
             return f"Failed to create role {role} with: {result}"
         self.changed = True
-        # can only gran privs one at a time...
+
         for priv in privileges:
             result = self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
             if self.failed:
