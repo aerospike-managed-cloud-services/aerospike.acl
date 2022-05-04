@@ -18,8 +18,8 @@ def add(x):
 
 
 class ManageUsers(ACL):
-    def __init__(self, asadm_config, asadm_user, asadm_password) -> None:
-        super().__init__(asadm_config, asadm_user, asadm_password)
+    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password) -> None:
+        super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
         self.users = self.get_users()
         self.changed = False
 

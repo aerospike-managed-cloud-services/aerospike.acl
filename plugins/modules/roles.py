@@ -12,85 +12,139 @@ import json
 from subprocess import run
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
+from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
+
+
+class RoleGetError(Exception):
+    pass
+
+
+class RoleDeleteError(Exception):
+    pass
+
+
+class RoleCreateError(Exception):
+    pass
+
+
+class RoleUpdateError(Exception):
+    pass
 
 
 class ManageRoles(ACL):
-    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password) -> None:
+    def __init__(
+        self, asadm_config, asadm_cluster, asadm_user, asadm_password, role, privileges, state
+    ) -> None:
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
-        self.roles = self.get_roles()
+        self.message = ""
         self.changed = False
+        try:
+            self.get_roles()
+        except RoleGetError as err:
+            self.failed = True
+            self.message = f"Failed to get roles with: {err}"
+            return
+        self.manage_role(role, privileges, state)
 
     def get_roles(self):
-        roles = {}
-        # For roles there will only every be a single group
-        for record in self.execute_cmd("show roles")["groups"][0]["records"]:
-            if record["Role"]["raw"] == "null":
-                roles[record["Role"]["raw"]] = []
-            else:
-                roles[record["Role"]["raw"]] = record["Privileges"]["raw"]
-        return roles
+        self.roles = {}
+        try:
+            # For roles there will only every be a single group
+            for record in self.execute_cmd("show roles")["groups"][0]["records"]:
+                if record["Role"]["raw"] == "null":
+                    self.roles[record["Role"]["raw"]] = []
+                else:
+                    self.roles[record["Role"]["raw"]] = record["Privileges"]["raw"]
+        except (ACLError, ACLWarning) as err:
+            raise RoleGetError(err)
 
     def manage_role(self, role, privileges, state):
-        if state == "absent":
-            return self.delete_role(role)
-        if role not in self.roles:
-            return self.create_role(role, privileges)
-        return self.update_privs(role, privileges)
+        try:
+            if state == "absent":
+                return self.delete_role(role)
+            if role not in self.roles:
+                return self.create_role(role, privileges)
+            grants = self.privileges_to_grant(role, privileges)
+            revokes = self.privileges_to_revoke(role, privileges)
+            return self.update_privs(role, grants, revokes)
+        except RoleDeleteError as err:
+            self.failed = True
+            self.message = f"Failed to delete role {role} with: {err}"
+        except RoleCreateError as err:
+            self.failed = True
+            self.message = f"Failed to create role {role} with: {err}"
+        except RoleUpdateError as err:
+            self.failed = True
+            self.message = f"Failed to update role {role} with: {err}"
 
     def delete_role(self, role):
         if role in self.roles:
-            result = self.execute_cmd(f"enable; manage acl delete role {role}")
-            if self.failed:
-                return f"Failed to delete role {role} with: {result}"
+            try:
+                self.execute_cmd(f"enable; manage acl delete role {role}")
+            except (ACLError, ACLWarning) as err:
+                self.failed = True
+                raise RoleDeleteError(err)
             self.changed = True
-            return f"Deleted role {role}"
-        return f"Role {role} does not exist so can't be deleted"
+            self.message = f"Deleted role {role}"
+
+        self.message = f"Role {role} does not exist so can't be deleted"
 
     def create_role(self, role, privileges):
-        # Unfortunately we can only grant a single privelege at a time
+        # Unfortunately the asadm interface only allows adding a single privelege at a time.
         priv = ""
         if privileges:
             priv = privileges[0]
 
-        result = self.execute_cmd(f"enable; manage acl create role {role} priv {priv}")
-        if self.failed:
-            return f"Failed to create role {role} with: {result}"
-        self.changed = True
+        try:
+            self.execute_cmd(f"enable; manage acl create role {role} priv {priv}")
+            self.changed = True
+
+            for priv in privileges:
+                self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
+        except (ACLError, ACLWarning) as err:
+            raise RoleCreateError(err)
+
+        self.message = f"Created role {role} with privileges {' '.join(privileges)}"
+
+    def privileges_to_grant(self, role, privileges):
+        privs_to_grant = []
 
         for priv in privileges:
-            result = self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
-            if self.failed:
-                return f"Failed to grant role {role} privelege {priv} with: {result}"
+            if priv not in self.roles[role]:
+                privs_to_grant.append(priv)
 
-        return f"Created role {role} with privileges {' '.join(privileges)}"
+        return privs_to_grant
 
-    def update_privs(self, role, privileges):
-        privs_to_grant = []
+    def privileges_to_revoke(self, role, privileges):
         privs_to_revoke = []
 
         for priv in self.roles[role]:
             if priv not in privileges:
-                privs_to_revoke.append(role)
-        for priv in privileges:
-            if priv not in self.roles[role]:
-                privs_to_grant.append(role)
+                privs_to_revoke.append(priv)
 
-        msg = ""
-        if privs_to_grant:
-            for priv in privileges:
-                result = self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
-                if self.failed:
-                    return f"Failed to grant role {role} priv {priv} with: {result}"
+        return privs_to_revoke
+
+    def update_privs(self, role, grants, revokes):
+        if not self.changed:
+            self.message = f"No updates needed for role {role}"
+
+        try:
+            for grant in grants:
+                self.execute_cmd(f"enable; manage acl grant role {role} priv {grant}")
                 self.changed = True
 
-        if privs_to_revoke:
-            for priv in privileges:
-                result = self.execute_cmd(f"enable; manage acl revoke role {role} priv {priv}")
-                if self.failed:
-                    return f"Failed to revoke privs {' '.join(privs_to_grant)} for role {role} with: {result}"
+            for revoke in revokes:
+                result = self.execute_cmd(f"enable; manage acl revoke role {role} priv {revoke}")
                 self.changed = True
+        except (ACLError, ACLWarning) as err:
+            raise RoleUpdateError(err)
 
-        return f"Updated role {role} granted privs {' '.join(privs_to_grant)} and revoked privs {' '.join(privs_to_revoke)}"
+        if grants and revokes:
+            self.message = f"Updated role {role} granted privileges {' '.join(grants)} and revoked priveleges {' '.join(revokes)}"
+        if grants and not revokes:
+            self.message = f"Updated role {role} granted privileges {' '.join(grants)}"
+        if not grants and revokes:
+            self.message = f"Updated role {role} revoked priveleges {' '.join(revokes)}"
 
 
 def run_module():
@@ -129,8 +183,6 @@ def run_module():
         module.params["asadm_cluster"],
         module.params["asadm_user"],
         module.params["asadm_password"],
-    )
-    res = mg.manage_role(
         module.params["role"],
         module.params["privileges"],
         module.params["state"],
@@ -142,13 +194,13 @@ def run_module():
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     # result["original_message"] = module.params["name"]
-    result["message"] = res
+    result["message"] = mg.message
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
     # AnsibleModule.fail_json() to pass in the message and the result
     if mg.failed:
-        module.fail_json(msg=res, **result)
+        module.fail_json(msg=mg.message, **result)
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
