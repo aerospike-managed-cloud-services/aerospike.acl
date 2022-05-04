@@ -11,108 +11,139 @@ import json
 from subprocess import run
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
+from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
 
 
-def add(x):
-    return x + 1
+class UserGetError(Exception):
+    pass
+
+
+class UserDeleteError(Exception):
+    pass
+
+
+class UserCreateError(Exception):
+    pass
+
+
+class UserRoleUpdateError(Exception):
+    pass
+
+
+class UserPasswordUpdateError(Exception):
+    pass
 
 
 class ManageUsers(ACL):
-    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password) -> None:
+    def __init__(
+        self, asadm_config, asadm_cluster, asadm_user, asadm_password, user, password, roles, state
+    ):
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
-        self.users = self.get_users()
         self.changed = False
+        self.failed = False
+        self.message = ""
+        try:
+            self.get_users()
+        except UserGetError as err:
+            set.failed = True
+            self.message = f"Failed to get users with: {err}"
+            return
+        self.manage_user(user, password, roles, state)
 
     def get_users(self):
-        users = {}
-        # For users there will only every be a single group
-        for record in self.execute_cmd("show users")["groups"][0]["records"]:
-            if record["Roles"]["raw"] == "null":
-                users[record["User"]["raw"]] = []
-            else:
-                users[record["User"]["raw"]] = record["Roles"]["raw"]
-        return users
+        self.users = {}
+        try:
+            # For users there will only every be a single group
+            for record in self.execute_cmd("show users")["groups"][0]["records"]:
+                if record["Roles"]["raw"] == "null":
+                    self.users[record["User"]["raw"]] = []
+                else:
+                    self.users[record["User"]["raw"]] = record["Roles"]["raw"]
+        except (ACLError, ACLWarning) as err:
+            raise UserGetError(err)
 
     def manage_user(self, user, password, roles, state):
-        if state == "absent":
-            return self.delete_user(user)
-        if user not in self.users:
-            return self.create_user(user, password, roles)
-        result = self.update_password(user, password)
-        if self.failed:
-            return result
-        message = self.update_roles(user, roles)
-        if self.failed:
-            return message
-        if message:
-            return f"Updated user {user} password and {message}"
-        return f"Updated user {user} password"
+        try:
+            if state == "absent":
+                return self.delete_user(user)
+            if user not in self.users:
+                return self.create_user(user, password, roles)
 
-    def create_user(self, user, password, roles):
-        result = self.execute_cmd(
-            f"enable; manage acl create user {user} password {password} roles {roles}"
-        )
-        if self.failed:
-            return f"Failed to create user {user} with: {result}"
-        self.changed = True
-        return f"Created user {user} with roles {' '.join(roles)}"
+            grants = self.roles_to_grant(user, roles)
+            revokes = self.roles_to_revoke(user, roles)
+            return self.update_user(user, password, grants, revokes)
+
+        except UserDeleteError as err:
+            self.message = f"Failed to delete user {user} with: {err}"
+        except UserCreateError as err:
+            self.message = f"Failed to create user {user} with: {err}"
+        except UserPasswordUpdateError as err:
+            self.message = f"Failed to update password for user {user} with: {err}"
+        except UserRoleUpdateError as err:
+            self.message = f"Failed to update roles for user {user} with: {err}"
 
     def delete_user(self, user):
         if user in self.users:
-            result = self.execute_cmd(f"enable; manage acl delete user {user}")
-            if self.failed:
-                return f"Failed to delete user {user} with: {result}"
+            try:
+                result = self.execute_cmd(f"enable; manage acl delete user {user}")
+            except (ACLError, ACLWarning) as err:
+                self.failed = True
+                raise UserDeleteError(err)
             self.changed = True
-            return f"Deleted user {user}"
-        return f"User {user} does not exist so can't be deleted"
+            self.message = f"Deleted user {user}"
+        self.message = f"User {user} does not exist so can't be deleted"
 
-    def update_roles(self, user, roles):
-        roles_to_grant = []
-        roles_to_revoke = []
-
-        for role in self.users[user]:
-            if role not in roles:
-                roles_to_revoke.append(role)
-        for role in roles:
-            if role not in self.users[user]:
-                roles_to_grant.append(role)
-
-        msg = ""
-        if roles_to_grant:
-            result = self.execute_cmd(
-                f"enable; manage acl grant user {user} roles {' '.join(roles_to_grant)}"
+    def create_user(self, user, password, roles):
+        try:
+            self.execute_cmd(
+                f"enable; manage acl create user {user} password {password} roles {roles}"
             )
-            if self.failed:
-                return (
-                    f"Failed to grant user {user} roles {' '.join(roles_to_grant)} with: {result}"
-                )
             self.changed = True
-            msg = f"granted roles {' '.join(roles_to_grant)}"
+        except (ACLError, ACLWarning) as err:
+            self.failed = True
+            raise UserCreateError(err)
+        self.message = f"Created user {user} with roles {' '.join(roles)}"
 
-        if roles_to_revoke:
-            result = self.execute_cmd(
-                f"enable; manage acl revoke user {user} roles {' '.join(roles_to_revoke)}"
-            )
-            if self.failed:
-                return f"Failed to revoke roles {' '.join(roles_to_grant)} for user {user} with: {result}"
+    def roles_to_grant(self, user, roles):
+        return [r for r in roles if r not in self.users[user]]
+
+    def roles_to_revoke(self, user, roles):
+        return [r for r in self.users[user] if r not in roles]
+
+    def update_user(self, user, password, grants, revokes):
+        try:
+            if grants:
+                self.execute_cmd(f"enable; manage acl grant user {user} roles {' '.join(grants)}")
+                self.changed = True
+            if revokes:
+                self.execute_cmd(f"enable; manage acl revoke user {user} roles {' '.join(revokes)}")
+                self.changed = True
+        except (ACLError, ACLWarning) as err:
+            self.failed = True
+            raise UserRoleUpdateError(err)
+
+        try:
+            # We always have to update the PW since we can't ask the DB what the current PW is.
+            self.execute_cmd(f"enable; manage acl set-password user {user} password {password}")
             self.changed = True
-            msg += f" and revoked roles {' '.join(roles_to_revoke)}"
+        except (ACLError, ACLWarning) as err:
+            self.failed = True
+            raise UserPasswordUpdateError(err)
 
-        return msg
-
-    def update_password(self, user, password):
-        result = self.execute_cmd(
-            f"enable; manage acl set-password user {user} password {password}"
-        )
-        if self.failed:
-            return f"Failed to set password for user {user} with: {result}"
-        self.changed = True
+        if not grants and not revokes:
+            self.message = f"Updated user {user} password"
+        if grants and revokes:
+            self.message = f"Updated user {user} password and granted roles {' '.join(grants)} and revoked roles {' '.join(revokes)}"
+        if grants and not revokes:
+            self.message = f"Updated user {user} password and granted roles {' '.join(grants)}"
+        if not grants and revokes:
+            self.message = f"Updated user {user} password and revoked roles {' '.join(revokes)}"
 
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf")
+        asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf"),
         asadm_cluster=dict(type="str", required=False, default="test"),
         asadm_user=dict(type="str", required=False, default="admin"),
         asadm_password=dict(type="str", required=False, default="admin"),
@@ -146,27 +177,24 @@ def run_module():
         module.params["asadm_cluster"],
         module.params["asadm_user"],
         module.params["asadm_password"],
-    )
-    res = mg.manage_user(
         module.params["user"],
         module.params["password"],
         module.params["roles"],
         module.params["state"],
     )
-    # res = mg.get_users()
     result["failed"] = mg.failed
     result["changed"] = mg.changed
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     # result["original_message"] = module.params["name"]
-    result["message"] = res
+    result["message"] = mg.message
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
     # AnsibleModule.fail_json() to pass in the message and the result
     if mg.failed:
-        module.fail_json(msg=res, **result)
+        module.fail_json(msg=mg.message, **result)
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results

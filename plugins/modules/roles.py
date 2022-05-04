@@ -36,8 +36,9 @@ class ManageRoles(ACL):
         self, asadm_config, asadm_cluster, asadm_user, asadm_password, role, privileges, state
     ) -> None:
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
-        self.message = ""
         self.changed = False
+        self.failed = False
+        self.message = ""
         try:
             self.get_roles()
         except RoleGetError as err:
@@ -68,13 +69,10 @@ class ManageRoles(ACL):
             revokes = self.privileges_to_revoke(role, privileges)
             return self.update_privs(role, grants, revokes)
         except RoleDeleteError as err:
-            self.failed = True
             self.message = f"Failed to delete role {role} with: {err}"
         except RoleCreateError as err:
-            self.failed = True
             self.message = f"Failed to create role {role} with: {err}"
         except RoleUpdateError as err:
-            self.failed = True
             self.message = f"Failed to update role {role} with: {err}"
 
     def delete_role(self, role):
@@ -86,7 +84,6 @@ class ManageRoles(ACL):
                 raise RoleDeleteError(err)
             self.changed = True
             self.message = f"Deleted role {role}"
-
         self.message = f"Role {role} does not exist so can't be deleted"
 
     def create_role(self, role, privileges):
@@ -102,32 +99,18 @@ class ManageRoles(ACL):
             for priv in privileges:
                 self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
         except (ACLError, ACLWarning) as err:
+            self.failed = True
             raise RoleCreateError(err)
 
         self.message = f"Created role {role} with privileges {' '.join(privileges)}"
 
     def privileges_to_grant(self, role, privileges):
-        privs_to_grant = []
-
-        for priv in privileges:
-            if priv not in self.roles[role]:
-                privs_to_grant.append(priv)
-
-        return privs_to_grant
+        return [p for p in privileges if p not in self.roles[role]]
 
     def privileges_to_revoke(self, role, privileges):
-        privs_to_revoke = []
-
-        for priv in self.roles[role]:
-            if priv not in privileges:
-                privs_to_revoke.append(priv)
-
-        return privs_to_revoke
+        return [p for p in self.roles[role] if p not in privileges]
 
     def update_privs(self, role, grants, revokes):
-        if not self.changed:
-            self.message = f"No updates needed for role {role}"
-
         try:
             for grant in grants:
                 self.execute_cmd(f"enable; manage acl grant role {role} priv {grant}")
@@ -137,8 +120,11 @@ class ManageRoles(ACL):
                 result = self.execute_cmd(f"enable; manage acl revoke role {role} priv {revoke}")
                 self.changed = True
         except (ACLError, ACLWarning) as err:
+            self.failed = True
             raise RoleUpdateError(err)
 
+        if not self.changed:
+            self.message = f"No updates needed for role {role}"
         if grants and revokes:
             self.message = f"Updated role {role} granted privileges {' '.join(grants)} and revoked priveleges {' '.join(revokes)}"
         if grants and not revokes:
