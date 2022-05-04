@@ -45,7 +45,6 @@ class ManageUsers(ACL):
         try:
             self.get_users()
         except UserGetError as err:
-            set.failed = True
             self.message = f"Failed to get users with: {err}"
             return
         self.manage_user(user, password, roles, state)
@@ -60,6 +59,7 @@ class ManageUsers(ACL):
                 else:
                     self.users[record["User"]["raw"]] = record["Roles"]["raw"]
         except (ACLError, ACLWarning) as err:
+            self.failed = True
             raise UserGetError(err)
 
     def manage_user(self, user, password, roles, state):
@@ -91,6 +91,7 @@ class ManageUsers(ACL):
                 raise UserDeleteError(err)
             self.changed = True
             self.message = f"Deleted user {user}"
+            return
         self.message = f"User {user} does not exist so can't be deleted"
 
     def create_user(self, user, password, roles):
