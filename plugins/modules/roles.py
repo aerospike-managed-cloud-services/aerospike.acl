@@ -32,9 +32,7 @@ class RoleUpdateError(Exception):
 
 
 class ManageRoles(ACL):
-    def __init__(
-        self, asadm_config, asadm_cluster, asadm_user, asadm_password, role, privileges, state
-    ) -> None:
+    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
         self.changed = False
         self.failed = False
@@ -45,14 +43,13 @@ class ManageRoles(ACL):
             self.failed = True
             self.message = f"Failed to get roles with: {err}"
             return
-        self.manage_role(role, privileges, state)
 
     def get_roles(self):
         self.roles = {}
         try:
-            # For roles there will only every be a single group
+            # For roles there will only every be a single group with the default roles/privileges present.
             for record in self.execute_cmd("show roles")["groups"][0]["records"]:
-                if record["Role"]["raw"] == "null":
+                if record["Privileges"]["raw"] == "null":
                     self.roles[record["Role"]["raw"]] = []
                 else:
                     self.roles[record["Role"]["raw"]] = record["Privileges"]["raw"]
@@ -84,6 +81,7 @@ class ManageRoles(ACL):
                 raise RoleDeleteError(err)
             self.changed = True
             self.message = f"Deleted role {role}"
+            return
         self.message = f"Role {role} does not exist so can't be deleted"
 
     def create_role(self, role, privileges):
@@ -96,7 +94,7 @@ class ManageRoles(ACL):
             self.execute_cmd(f"enable; manage acl create role {role} priv {priv}")
             self.changed = True
 
-            for priv in privileges:
+            for priv in privileges[1:]:
                 self.execute_cmd(f"enable; manage acl grant role {role} priv {priv}")
         except (ACLError, ACLWarning) as err:
             self.failed = True
@@ -117,7 +115,7 @@ class ManageRoles(ACL):
                 self.changed = True
 
             for revoke in revokes:
-                result = self.execute_cmd(f"enable; manage acl revoke role {role} priv {revoke}")
+                self.execute_cmd(f"enable; manage acl revoke role {role} priv {revoke}")
                 self.changed = True
         except (ACLError, ACLWarning) as err:
             self.failed = True
@@ -169,6 +167,9 @@ def run_module():
         module.params["asadm_cluster"],
         module.params["asadm_user"],
         module.params["asadm_password"],
+    )
+
+    mg.manage_role(
         module.params["role"],
         module.params["privileges"],
         module.params["state"],
