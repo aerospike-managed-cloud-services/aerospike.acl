@@ -6,9 +6,6 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-import subprocess
-import json
-from subprocess import run
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
@@ -35,9 +32,7 @@ class UserPasswordUpdateError(Exception):
 
 
 class ManageUsers(ACL):
-    def __init__(
-        self, asadm_config, asadm_cluster, asadm_user, asadm_password, user, password, roles, state
-    ):
+    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
         self.changed = False
         self.failed = False
@@ -47,12 +42,11 @@ class ManageUsers(ACL):
         except UserGetError as err:
             self.message = f"Failed to get users with: {err}"
             return
-        self.manage_user(user, password, roles, state)
 
     def get_users(self):
         self.users = {}
         try:
-            # For users there will only every be a single group
+            # For users there will only every be a single group and at least one user (admin).
             for record in self.execute_cmd("show users")["groups"][0]["records"]:
                 if record["Roles"]["raw"] == "null":
                     self.users[record["User"]["raw"]] = []
@@ -85,7 +79,7 @@ class ManageUsers(ACL):
     def delete_user(self, user):
         if user in self.users:
             try:
-                result = self.execute_cmd(f"enable; manage acl delete user {user}")
+                self.execute_cmd(f"enable; manage acl delete user {user}")
             except (ACLError, ACLWarning) as err:
                 self.failed = True
                 raise UserDeleteError(err)
@@ -178,6 +172,8 @@ def run_module():
         module.params["asadm_cluster"],
         module.params["asadm_user"],
         module.params["asadm_password"],
+    )
+    mg.manage_user(
         module.params["user"],
         module.params["password"],
         module.params["roles"],
