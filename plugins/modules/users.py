@@ -6,7 +6,10 @@ __metaclass__ = type
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
-    ACL, ACLError, ACLWarning)
+    ACL,
+    ACLError,
+    ACLWarning,
+)
 
 
 class UserGetError(Exception):

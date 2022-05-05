@@ -2,7 +2,10 @@
 
 import pytest
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
-    ACL, ACLError, ACLWarning)
+    ACL,
+    ACLError,
+    ACLWarning,
+)
 
 
 class RunMock:

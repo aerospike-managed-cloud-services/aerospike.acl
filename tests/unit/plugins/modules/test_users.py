@@ -1,10 +1,13 @@
 import pytest
-from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
-    ACLError, ACLWarning)
+from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
 from ansible_collections.aerospike.acl.plugins.modules import users
 from ansible_collections.aerospike.acl.plugins.modules.users import (
-    ManageUsers, UserCreateError, UserDeleteError, UserPasswordUpdateError,
-    UserRoleUpdateError)
+    ManageUsers,
+    UserCreateError,
+    UserDeleteError,
+    UserPasswordUpdateError,
+    UserRoleUpdateError,
+)
 
 
 def test_get_users_happy_path(mocker):
