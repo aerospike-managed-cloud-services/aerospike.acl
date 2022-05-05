@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 
 import pytest
-
+from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
 from ansible_collections.aerospike.acl.plugins.modules import roles
-from ansible_collections.aerospike.acl.plugins.modules.roles import ManageRoles
 from ansible_collections.aerospike.acl.plugins.modules.roles import (
-    RoleGetError,
-    RoleDeleteError,
     RoleCreateError,
+    RoleDeleteError,
     RoleUpdateError,
 )
-
-from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
-from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
 
 
 def test_get_roles_happy(mocker):

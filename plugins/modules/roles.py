@@ -1,18 +1,15 @@
-#!/usr/bin/env python3
 #!/usr/bin/python
 
-# Copyright: (c) 2018, Terry Jones <terry.jones@example.org>
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-import subprocess
-import json
-from subprocess import run
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACL
-from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import ACLError, ACLWarning
+from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
+    ACL,
+    ACLError,
+    ACLWarning,
+)
 
 
 class RoleGetError(Exception):
