@@ -13,7 +13,7 @@ class ACLWarning(Exception):
 
 
 class ACL:
-    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password) -> None:
+    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         self.asadm_config = asadm_config
         self.asadm_cluster = asadm_cluster
         self.asadm_user = asadm_user
