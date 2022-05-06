@@ -11,12 +11,6 @@ jobs:
         with:
           path: ansible/collections/ansible_collections/aerospike/acl
 
-      - name: Move the repo to the required directory structure
-        working-directory: ansible/collections/ansible_collections/aerospike/acl
-        run: |
-          mv aerospike/* ./
-          rm -rf aerospike
-
       - uses: actions/setup-python@v3
         with:
           python-version: "3.9"
