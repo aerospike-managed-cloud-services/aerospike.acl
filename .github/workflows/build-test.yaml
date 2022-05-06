@@ -18,8 +18,4 @@ jobs:
       - name: Setup virtualenv and run the unit tests
         working-directory: ansible/collections/ansible_collections/aerospike/acl
         run: |
-          python -m venv env
-          source env/bin/activate
-          pip install -r dev-requirements.txt
           make test
-          make cov
