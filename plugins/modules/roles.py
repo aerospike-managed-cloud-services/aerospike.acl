@@ -121,11 +121,11 @@ class ManageRoles(ACL):
         if not self.changed:
             self.message = f"No updates needed for role {role}"
         if grants and revokes:
-            self.message = f"Updated role {role} granted privileges {' '.join(grants)} and revoked priveleges {' '.join(revokes)}"
+            self.message = f"Updated role {role} granted privileges {' '.join(grants)} and revoked privileges {' '.join(revokes)}"
         if grants and not revokes:
             self.message = f"Updated role {role} granted privileges {' '.join(grants)}"
         if not grants and revokes:
-            self.message = f"Updated role {role} revoked priveleges {' '.join(revokes)}"
+            self.message = f"Updated role {role} revoked privileges {' '.join(revokes)}"
 
 
 def run_module():

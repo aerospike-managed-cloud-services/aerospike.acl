@@ -246,7 +246,7 @@ def test_manage_role_update_happy(mocker):
         "enable; manage acl revoke role foo priv role-admin",
     ]
     assert (
-        mg.message == "Updated role foo granted privileges a b c and revoked priveleges role-admin"
+        mg.message == "Updated role foo granted privileges a b c and revoked privileges role-admin"
     )
     assert mg.failed == False
     assert mg.changed == True
@@ -509,7 +509,7 @@ def test_update_role_happy(mocker):
         "enable; manage acl grant role foo priv b",
         "enable; manage acl revoke role foo priv role-admin",
     ]
-    assert mg.message == "Updated role foo granted privileges a b and revoked priveleges role-admin"
+    assert mg.message == "Updated role foo granted privileges a b and revoked privileges role-admin"
     assert mg.failed == False
     assert mg.changed == True
 
@@ -661,13 +661,13 @@ def test_update_role_happy_revokes(mocker):
 
     mg = roles.ManageRoles("", "", "", "")
 
-    mg.update_privs("foo", ["a", "b"], [])
+    mg.update_privs("foo", [], ["a", "b"])
 
     assert commands == [
         "show roles",
-        "enable; manage acl grant role foo priv a",
-        "enable; manage acl grant role foo priv b",
+        "enable; manage acl revoke role foo priv a",
+        "enable; manage acl revoke role foo priv b",
     ]
-    assert mg.message == "Updated role foo granted privileges a b"
+    assert mg.message == "Updated role foo revoked privileges a b"
     assert mg.failed == False
     assert mg.changed == True
