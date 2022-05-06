@@ -4,6 +4,94 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+DOCUMENTATION = r'''
+---
+module: users
+
+short_description: Aerospike user ACL management
+
+version_added: "1.0.0"
+
+description: Create, update, and delete Aerospike DB users with asadm
+
+options:
+    asadm_config:
+        description: The path to the asadm config file.
+        required: false
+        type: str
+        default: /etc/aerospike/astools.conf
+    asadm_cluster:
+        description: The cluster name to target.
+        required: false
+        type: str
+        default: test
+    asadm_user:
+        description: The user to run asadm with.
+        required: false
+        type: str
+        default: admin
+    asadm_password:
+        description: The password to run asadm with.
+        required: false
+        type: str
+        default: admin
+    state:
+        description: The desired state.
+        required: false
+        type: list
+        default: present
+        choices: [ present, absent ]
+    user:
+        description: The user to operate on.
+        required: true
+        type: str
+    password:
+        description: The user user password.
+        required: false
+        type: str
+    roles:
+        description: Roles the user should have.
+        required: false
+        type: list
+        default: [  ]
+
+author:
+    - Aerospike Managed Customer Services <managedservices@aerospike.com>
+'''
+
+EXAMPLES = r'''
+- name: Create/Update a user
+  aerospike.acl.users:
+    user: foo
+    password: bar
+    roles:
+      - user-admin
+      - data-admin
+
+- name: Delete a user
+  aerospike.acl.users:
+    user: foo
+    state: absent
+'''
+
+RETURN = r'''
+changed:
+    description: Boolean representing if the user was changed (or created).
+    type: bool
+    returned: always
+    sample: true
+failed:
+    description: Boolean representing if the desired action on the user failed.
+    type: bool
+    returned: always
+    sample: false
+message:
+    description: Message representing the action taken during task run or any failures.
+    type: str
+    returned: always
+    sample: Created user foo with roles user-admin data-admin
+'''
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
     ACL,
@@ -134,6 +222,7 @@ class ManageUsers(ACL):
             self.message = f"Updated user {user} password and granted roles {' '.join(grants)}"
         if not grants and revokes:
             self.message = f"Updated user {user} password and revoked roles {' '.join(revokes)}"
+
 
 
 def run_module():

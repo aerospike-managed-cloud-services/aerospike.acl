@@ -4,6 +4,89 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+DOCUMENTATION = r'''
+---
+module: roles
+
+short_description: Aerospike role ACL management
+
+version_added: "1.0.0"
+
+description: Create, update, and delete Aerospike DB roles with asadm
+
+options:
+    asadm_config:
+        description: The path to the asadm config file.
+        required: false
+        type: str
+        default: /etc/aerospike/astools.conf
+    asadm_cluster:
+        description: The cluster name to target.
+        required: false
+        type: str
+        default: test
+    asadm_role:
+        description: The role to run asadm with.
+        required: false
+        type: str
+        default: admin
+    asadm_password:
+        description: The password to run asadm with.
+        required: false
+        type: str
+        default: admin
+    state:
+        description: The desired state.
+        required: false
+        type: list
+        default: present
+        choices: [ present, absent ]
+    role:
+        description: The role to operate on.
+        required: true
+        type: str
+    privileges:
+        description: Privileges the role should have.
+        required: false
+        type: list
+        default: [  ]
+
+author:
+    - Aerospike Managed Customer Services <managedservices@aerospike.com>
+'''
+
+EXAMPLES = r'''
+- name: Create/Update a role
+  aerospike.acl.roles:
+    role: foo
+    privileges:
+      - user-admin
+      - data-admin
+
+- name: Delete a role
+  aerospike.acl.roles:
+    role: foo
+    state: absent
+'''
+
+RETURN = r'''
+changed:
+    description: Boolean representing if the role was changed (or created).
+    type: bool
+    returned: always
+    sample: true
+failed:
+    description: Boolean representing if the desired action on the role failed.
+    type: bool
+    returned: always
+    sample: false
+message:
+    description: Message representing the action taken during task run or any failures.
+    type: str
+    returned: always
+    sample: Created role foo with privileges user-admin data-admin
+'''
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
     ACL,
