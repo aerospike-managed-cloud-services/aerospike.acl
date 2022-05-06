@@ -1,0 +1,6 @@
+pytest==7.1.2
+pytest-cov==3.0.0
+pytest-mock==3.7.0
+black==22.1.0
+isort==5.10.1
+ansible-core @ https://github.com/ansible/ansible/archive/devel.tar.gz
