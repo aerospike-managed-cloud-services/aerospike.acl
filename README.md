@@ -1,48 +1,193 @@
-> ---
->
-> :information_source: How to use this template repository
->
-> Ref: [AMS Project Repo] HOWTO document
->
-> ### Update and customize the new repo to your needs
->
-> 1. Update this README:
->    - update title, description, install steps and anything marked (replace)
->    - add version info to the changelog
->    - Maintainer section might work for you with no changes!
->    - delete this info section from the top
-> 1. Read `build-test.yaml` and `release.yaml` (in `.github/workflows`)
->    - update as needed
->    - `release.yaml` and the `makefile` assume you will have a build step,
->      and that your release artifact is a simple tarball
-> 1. Read `makefile` and update as needed
->    - Several lines are marked (replace), pay special attention to those
-> 1. Create a `dev` branch from `main`
-> 1. Create and push a `v0.0` tag to the HEAD of `main`
->
-> [ams project repo]: https://aerospike.atlassian.net/wiki/spaces/MS/pages/2567471115/Organization+and+Tooling+AMS+Project+Repo+DRAFT
-> [more info]: https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template
-> [aerospike-managed-cloud-services/template-github-repo]: https://github.com/aerospike-managed-cloud-services/template-github-repo
->
-> ---
+# aerospike.acl
 
-# db-user-management
-
-Aerospike DB user management
+Aerospike DB user and role management with asadm
 
 ## Installation
 
-1. steps to download
+Ansible knows where to look for collections based on the `collections_paths` variable set in your `ansible.cfg` file, for example:
 
-1. unpack
+```ini
+[defaults]
+collections_paths=~/ansible/collections
+```
 
-1. copy files
+Collections _must_ be installed to one of the directories listed in `collections_paths` for ansible to be able to find them.
+
+### From a release artifact
+
+Download the collection archive for the specific release you need under [releases](https://github.com/aerospike-managed-cloud-services/aerospike.acl/releases).
+
+```shell
+$ ansible-galaxy collection install {{ path to the downloaded archive }} -p {{ path to your configured collections }}
+```
+
+### From a local repo
+
+```shell
+$ ansible-galaxy collection install {{ path to the collection repo }} -p {{ path to your configured collections }}
+```
 
 ---
+
+## Development
+
+Ansible tools expect that the collection you're working in is in a directory under `ansible/collections/ansible_collections`, this is a hard requirement due to how ansible structures import paths for modules.
+
+Additionally collection repositories have the name `{{ namespace }}.{{ collection }}` (for example this repo is `aerospike.acl`), however the import path requires that we do `{{ namespace }}/{{ acl }}`.
+
+Which means that we need to set up the repository like this:
+
+```shell
+mkdir -p ~/repos/dev/ansible/collections/ansible_collections/aerospike
+cd ~/repos/dev/ansible/collections/ansible_collections/aerospike
+git clone git@github.com:aerospike-managed-cloud-services/aerospike.acl.git acl
+```
+
+Note that the path you select needs to be included in your `collection_paths` for the integration tests to work, for example with the repo setup as above we'd need the following:
+
+```ini
+[defaults]
+collections_paths=/home/username/repos/dev/ansible/collections
+```
+
+### Unit Tests
+
+Unit tests can be run with the `make test` directive, this both sets up a python virtualenv and runs `pytest`.
+
+Because of the ansible module path requirements we have to set the `PYTHONPATH` variable to include the parent directories, this is done for us in the pytest config file here:
+
+```ini
+[pytest]
+pythonpath = "../../../"
+```
+
+### Integration testing
+
+With Docker we can spin up a local Aerospike and then run actual end-to-end tests in ways:
+
+1. Running a playbook with tasks referencing our modules
+1. Calling the python modules directly with json data as input
+
+Both of the above require the following:
+
+1. A local Aerospike which can be spun up with `make start-aerospike` (assuming you have Docker installed)
+1. The `asadm` executable in your shell path
+1. The `PYTHONPATH` variable in your shell must contain `../../../`
+
+### Run a local Aerospike with Docker
+
+We can run a local Aerospike using docker, however we have to run the enterprise edition in order to have access to the security features, this means we need to supply a feature key and a custom Aerospike configuration.
+
+The custom Aerospike configuration is already setup in `./test_config/aerospike.conf`, we just need to add a valid feature key at `./test_config/features.conf`. At runtime the `test_config` directory gets mounted by Docker at `/opt/etc/aerospike` making both the `aerospike.conf` file and the `features.conf` file available to the asd process.
+
+The makefile is setup with the following directives:
+
+- `make start-aerospike`
+- `make stop-aerospike`
+
+### Install asadm
+
+Follow the build and install directions for asadm here: https://github.com/aerospike/aerospike-admin
+
+Once you've built an executable you'll need to add it to your path, similar to this:
+
+```shell
+ln -s ~/repos/aerospike-admin/build/bin/asadm ~/.local/bin/asadm
+```
+
+Once installed (and Aerospike is running) you should be able to list users like this using asadm:
+
+```shell
+asadm --config-file="test_config/astools.conf" -U admin -P admin --instance="test" -e 'show users' --json | sed -n '/^{$/,$p' | jq '.'
+{
+  "title": "Users (2022-05-06 20:38:20 UTC)",
+  "groups": [
+    {
+      "records": [
+        {
+          "User": {
+            "raw": "admin",
+            "converted": "admin"
+          },
+          "Roles": {
+            "raw": [
+              "user-admin"
+            ],
+            "converted": "user-admin"
+          },
+          "Connections": {
+            "raw": "3",
+            "converted": "3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Run a module directly with test data
+
+Probably the quickest way to develop module features is to just run the module directly with python specifying the desired input.
+
+For example in `test_config` we have both `args-users.json` and `args-roles.json` these can be run with the corresponding modules paths like:
+
+```shell
+python -m plugins.modules.users test_config/args-users.json | jq '.'
+{
+  "changed": true,
+  "failed": false,
+  "original_message": "",
+  "message": "Created user foo with roles write",
+  "invocation": {
+    "module_args": {
+      "asadm_config": "test_config/astools.conf",
+      "user": "foo",
+      "password": "bar",
+      "roles": [
+        "write"
+      ],
+      "state": "present",
+      "asadm_cluster": "test",
+      "asadm_user": "admin",
+      "asadm_password": "admin"
+    }
+  },
+  "warnings": [
+    "Module did not set no_log for password",
+    "Module did not set no_log for asadm_password"
+  ]
+}
+```
+
+Note that again you need to set the `PYTHONPATH` to include `../../../` for the above to work.
+
+### Use ansible-play to run modules
+
+Of course we can also run the modules as tasks directly with ansible as well, in the `test_confg` directory there's a play that exercises both roles and users, it can be run as follows:
+
+```shell
+ansible-playbook test_config/test_play.yml
+
+PLAY [test managing users and roles] *****************************************************************************
+TASK [Gathering Facts] *******************************************************************************************
+
+TASK [Create/Update roles] ***************************************************************************************
+ok: [localhost] => (item={'name': 't2-role', 'state': 'absent', 'privs': ['read']})
+changed: [localhost] => (item={'name': 't6', 'state': 'present', 'privs': ['write']})
+
+TASK [Create/Update users] ***************************************************************************************
+changed: [localhost] => (item={'name': 't2', 'state': 'present', 'password': 'bar', 'roles': ['t2-role']})
+
+PLAY RECAP *******************************************************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
 
 ## Maintainer section: releasing
 
 To cut a release of this software, automated tests must pass. Check under `Actions` for the latest commit.
+
+_Don't forget_ to update the version in the `galaxy.yml` file, failure to do this will result in build artifacts with incorrect versions.
 
 #### Create an RC branch and test
 
