@@ -16,7 +16,7 @@ test:
 	pytest  tests/unit/plugins/modules/
 
 cov:
-	pytest --cov=./plugins tests/unit/plugins/modules/
+	pytest --cov=./plugins tests/unit/plugins/modules/ --cov-fail-under=88
 
 format:
 	black -l 100 plugins tests

@@ -23,4 +23,3 @@ jobs:
           pip install -r dev-requirements.txt
           make test
           make cov
-          pytest --cov=./plugins tests/unit/plugins/modules/ --cov-fail-under=88
