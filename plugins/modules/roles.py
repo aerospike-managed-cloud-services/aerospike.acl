@@ -249,12 +249,12 @@ def run_module():
         module.params["asadm_password"],
     )
 
-    mg.manage_role(
-        module.params["role"],
-        module.params["privileges"],
-        module.params["state"],
-    )
-    # res = mg.get_users()
+    if not mg.failed:
+        mg.manage_role(
+            module.params["role"],
+            module.params["privileges"],
+            module.params["state"],
+        )
     result["failed"] = mg.failed
     result["changed"] = mg.changed
 
