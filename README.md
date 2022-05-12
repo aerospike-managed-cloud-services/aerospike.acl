@@ -43,7 +43,7 @@ cd ~/repos/dev/ansible/collections/ansible_collections/aerospike
 git clone git@github.com:aerospike-managed-cloud-services/aerospike.acl.git acl
 ```
 
-Note that the path you select needs to be included in your `collection_paths` for the integration tests to work, for example with the repo setup as above we'd need the following:
+Note that the path you select needs to be included in your `collection_paths` in your `ansible.cfg` file for the integration tests to work, for example with the repo setup as above we'd need the following:
 
 ```ini
 [defaults]
