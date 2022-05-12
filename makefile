@@ -1,6 +1,6 @@
 #!/usr/bin/env make
 
-SHELL				:= /usr/bin/bash
+SHELL				:= /usr/bin/env bash
 DOCKER				:= docker
 
 .PHONY: clean test build cov
