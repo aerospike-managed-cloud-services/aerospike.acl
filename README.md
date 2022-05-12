@@ -54,7 +54,7 @@ collections_paths=/home/username/repos/dev/ansible/collections
 
 Unit tests can be run with the `make test` directive, this both sets up a python virtualenv and runs `pytest`.
 
-Because of the ansible module path requirements we have to set the `PYTHONPATH` variable to include the parent directories, this is done for us in the pytest config file here:
+Because of the ansible module path requirements we have to set the `PYTHONPATH` variable to include the parent directories, this is done for us in the `pytest.ini` config file here:
 
 ```ini
 [pytest]
