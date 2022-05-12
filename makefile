@@ -3,7 +3,7 @@
 SHELL				:= /usr/bin/env bash
 DOCKER				:= docker
 
-.PHONY: clean test build cov
+.PHONY: clean test build format start-aerospike stop-aerospike
 
 build:
 	ansible-galaxy collection build --output-path build/
