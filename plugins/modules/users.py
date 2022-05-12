@@ -99,26 +99,32 @@ from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
 
 
 class UserGetError(Exception):
+    ''' Failure to get users. '''
     pass
 
 
 class UserDeleteError(Exception):
+    ''' Failure to delete user. '''
     pass
 
 
 class UserCreateError(Exception):
+    ''' Failure to create user. '''
     pass
 
 
 class UserRoleUpdateError(Exception):
+    ''' Failure to update a users roles. '''
     pass
 
 
 class UserPasswordUpdateError(Exception):
+    ''' Failure to update a users password. '''
     pass
 
 
 class ManageUsers(ACL):
+    ''' Create, update and delete Aerospike users. '''
     def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
         self.changed = False
@@ -131,6 +137,10 @@ class ManageUsers(ACL):
             return
 
     def get_users(self):
+        '''
+        Get users and their roles from Aerospike, then mutate into a dict with user names
+        as keys and values as a list of the users roles.
+        '''
         self.users = {}
         try:
             # For users there will only every be a single group and at least one user (admin).
@@ -144,6 +154,12 @@ class ManageUsers(ACL):
             raise UserGetError(err)
 
     def manage_user(self, user, password, roles, state):
+        '''
+        This is the entry point for actually making changes to or creating a new user. First we
+        validate the input then depending on the specified state and whether the user already exists
+        we delete, create, or update the user. Note that passwords always have to be updated since we
+        can't query their current value from the DB.
+        '''
         if not self.single_token(user):
             self.message = f"Failed to validate user '{user}' see Aerospike docs for valid name characters"
             self.failed = True
@@ -179,6 +195,7 @@ class ManageUsers(ACL):
 
 
     def delete_user(self, user):
+        ''' Delete a user. '''
         if user in self.users:
             try:
                 self.execute_cmd(f"enable; manage acl delete user {user}")
@@ -191,6 +208,7 @@ class ManageUsers(ACL):
         self.message = f"User {user} does not exist so can't be deleted"
 
     def create_user(self, user, password, roles):
+        ''' Create a user. '''
         try:
             self.execute_cmd(
                 f"enable; manage acl create user {user} password {password} roles {roles}"
@@ -202,12 +220,15 @@ class ManageUsers(ACL):
         self.message = f"Created user {user} with roles {' '.join(roles)}"
 
     def roles_to_grant(self, user, roles):
+        ''' Determine the roles to be granted. '''
         return [r for r in roles if r not in self.users[user]]
 
     def roles_to_revoke(self, user, roles):
+        ''' Determine the roles to be revoked. '''
         return [r for r in self.users[user] if r not in roles]
 
     def update_user(self, user, password, grants, revokes):
+        ''' Update the users roles and password. '''
         try:
             if grants:
                 self.execute_cmd(f"enable; manage acl grant user {user} roles {' '.join(grants)}")
@@ -239,6 +260,8 @@ class ManageUsers(ACL):
 
 
 def run_module():
+    ''' This is the interface to ansible code, from it we run the manage_users method.'''
+
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
         asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf"),

@@ -94,22 +94,27 @@ from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
 
 
 class RoleGetError(Exception):
+    ''' Failure to get roles. '''
     pass
 
 
 class RoleDeleteError(Exception):
+    ''' Failure to delete a role. '''
     pass
 
 
 class RoleCreateError(Exception):
+    ''' Failure to create a role. '''
     pass
 
 
 class RoleUpdateError(Exception):
+    ''' Failure to update a role. '''
     pass
 
 
 class ManageRoles(ACL):
+    ''' Create, update and delete Aerospike roles. '''
     def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
         self.changed = False
@@ -123,6 +128,10 @@ class ManageRoles(ACL):
             return
 
     def get_roles(self):
+        '''
+        Get roles and their privileges from Aerospike, then mutate into a dict with role names
+        as keys and values as a list of the roles privileges.
+        '''
         self.roles = {}
         try:
             # For roles there will only every be a single group with the default roles/privileges present.
@@ -135,6 +144,11 @@ class ManageRoles(ACL):
             raise RoleGetError(err)
 
     def manage_role(self, role, privileges, state):
+        '''
+        This is the entry point for actually making changes to or creating a new role. First we
+        validate the input then depending on the specified state and whether the role already exists
+        we delete, create, or update it.
+        '''
         if not self.single_token(role):
             self.message = f"Failed to validate role '{role}' see Aerospike docs for valid role characters"
             self.failed = True
@@ -160,6 +174,7 @@ class ManageRoles(ACL):
             self.message = f"Failed to update role {role} with: {err}"
 
     def delete_role(self, role):
+        ''' Delete a role. '''
         if role in self.roles:
             try:
                 self.execute_cmd(f"enable; manage acl delete role {role}")
@@ -172,6 +187,7 @@ class ManageRoles(ACL):
         self.message = f"Role {role} does not exist so can't be deleted"
 
     def create_role(self, role, privileges):
+        ''' Create a role. '''
         # Unfortunately the asadm interface only allows adding a single privelege at a time.
         priv = ""
         if privileges:
@@ -190,12 +206,15 @@ class ManageRoles(ACL):
         self.message = f"Created role {role} with privileges {' '.join(privileges)}"
 
     def privileges_to_grant(self, role, privileges):
+        ''' Determine the privileges to be granted. '''
         return [p for p in privileges if p not in self.roles[role]]
 
     def privileges_to_revoke(self, role, privileges):
+        ''' Determine the privileges to be revoked. '''
         return [p for p in self.roles[role] if p not in privileges]
 
     def update_privs(self, role, grants, revokes):
+        ''' Update the roles privileges. '''
         try:
             for grant in grants:
                 self.execute_cmd(f"enable; manage acl grant role {role} priv {grant}")
@@ -219,6 +238,8 @@ class ManageRoles(ACL):
 
 
 def run_module():
+    ''' This is the interface to ansible code, from it we run the manage_users method.'''
+
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
         asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf"),
