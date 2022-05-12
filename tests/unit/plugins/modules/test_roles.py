@@ -78,6 +78,48 @@ def test_get_roles_warning(mocker):
     assert mg.message == "Failed to get roles with: Ohh no there was an error!!"
 
 
+def test_manage_role_user_validation_failure(mocker):
+    def mock_execute_cmd(self, cmd):
+        if cmd == "show roles":
+            return {
+                "groups": [
+                    {"records": [{"Role": {"raw": "foo"}, "Privileges": {"raw": ["role-admin"]}}]}
+                ]
+            }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    mg = roles.ManageRoles("", "", "", "")
+    mg.manage_role("not a valid role", ["write"], "absent")
+
+    assert mg.failed == True
+    assert mg.changed == False
+    assert mg.message == "Failed to validate role 'not a valid role' see Aerospike docs for valid role characters"
+
+def test_manage_role_priv_validation_failure(mocker):
+    def mock_execute_cmd(self, cmd):
+        if cmd == "show roles":
+            return {
+                "groups": [
+                    {"records": [{"Role": {"raw": "foo"}, "Privileges": {"raw": ["role-admin"]}}]}
+                ]
+            }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    mg = roles.ManageRoles("", "", "", "")
+    mg.manage_role("foo", ["write^read(scan"], "absent")
+
+    assert mg.failed == True
+    assert mg.changed == False
+    assert mg.message == "Failed to validate privilege 'write^read(scan' for role 'foo' see Aerospike docs for valid privilege characters"
+
 def test_manage_role_delete_happy(mocker):
     commands = []
 

@@ -137,6 +137,15 @@ class ManageRoles(ACL):
             raise RoleGetError(err)
 
     def manage_role(self, role, privileges, state):
+        if not self.single_token(role):
+            self.message = f"Failed to validate role '{role}' see Aerospike docs for valid role characters"
+            self.failed = True
+            return
+        for priv in privileges:
+            if not self.single_token(priv):
+                self.failed = True
+                self.message = f"Failed to validate privilege '{priv}' for role '{role}' see Aerospike docs for valid privilege characters"
+                return
         try:
             if state == "absent":
                 return self.delete_role(role)

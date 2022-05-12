@@ -146,6 +146,20 @@ class ManageUsers(ACL):
             raise UserGetError(err)
 
     def manage_user(self, user, password, roles, state):
+        if not self.single_token(user):
+            self.message = f"Failed to validate user '{user}' see Aerospike docs for valid name characters"
+            self.failed = True
+            return
+        if not self.single_token(password):
+            self.failed = True
+            self.message = f"Failed to validate password '{password}' for user '{user}' see Aerospike docs for valid password characters"
+            return
+        for role in roles:
+            if not self.single_token(role):
+                self.failed = True
+                self.message = f"Failed to validate role '{role}' for user '{user}' see Aerospike docs for valid role characters"
+                return
+
         try:
             if state == "absent":
                 return self.delete_user(user)
@@ -164,6 +178,7 @@ class ManageUsers(ACL):
             self.message = f"Failed to update password for user {user} with: {err}"
         except UserRoleUpdateError as err:
             self.message = f"Failed to update roles for user {user} with: {err}"
+
 
     def delete_user(self, user):
         if user in self.users:

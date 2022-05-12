@@ -115,3 +115,10 @@ def test_parse_result_warning(mocker):
         )
 
     assert "WARNING: this is a warning" in str(err.value)
+
+def test_single_token():
+    acl = ACL("cfg_path", "user", "password", "instance")
+    assert acl.single_token("thisshouldnotfail") == True
+    assert acl.single_token("this should fail") == False
+    assert acl.single_token("this^should(fail") == False
+

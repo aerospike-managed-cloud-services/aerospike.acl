@@ -108,6 +108,61 @@ def test_get_users_acl_warning(mocker):
     assert mg.failed == True
 
 
+def test_manage_user_user_validation_failure(mocker):
+    def mock_execute_cmd(self, cmd):
+        return {
+            "groups": [{"records": [{"User": {"raw": "foo"}, "Roles": {"raw": ["user-admin"]}}]}]
+        }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    mg = users.ManageUsers("", "", "", "")
+    mg.manage_user("not a valid user", "biz", "", "absent")
+
+    assert mg.failed == True
+    assert mg.changed == False
+    assert mg.message == "Failed to validate user 'not a valid user' see Aerospike docs for valid name characters"
+
+def test_manage_user_password_validation_failure(mocker):
+    def mock_execute_cmd(self, cmd):
+        return {
+            "groups": [{"records": [{"User": {"raw": "foo"}, "Roles": {"raw": ["user-admin"]}}]}]
+        }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    mg = users.ManageUsers("", "", "", "")
+    mg.manage_user("foo", "not^a(valid$password", "", "absent")
+
+    assert mg.failed == True
+    assert mg.changed == False
+    assert mg.message == "Failed to validate password 'not^a(valid$password' for user 'foo' see Aerospike docs for valid password characters"
+
+def test_manage_user_role_validation_failure(mocker):
+    def mock_execute_cmd(self, cmd):
+        return {
+            "groups": [{"records": [{"User": {"raw": "foo"}, "Roles": {"raw": ["user-admin"]}}]}]
+        }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    mg = users.ManageUsers("", "", "", "")
+    mg.manage_user("foo", "bix", ['not^a(valid!role'], "absent")
+
+    assert mg.failed == True
+    assert mg.changed == False
+    assert mg.message == "Failed to validate role 'not^a(valid!role' for user 'foo' see Aerospike docs for valid role characters"
+
+
 def test_manage_user_delete_happy(mocker):
     def mock_execute_cmd(self, cmd):
         return {
@@ -122,7 +177,7 @@ def test_manage_user_delete_happy(mocker):
     spy = mocker.spy(ManageUsers, "delete_user")
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "", "", "absent")
+    mg.manage_user("foo", "biz", "", "absent")
 
     assert mg.users == {"foo": ["user-admin"]}
     assert spy.call_count == 1
@@ -145,7 +200,7 @@ def test_manage_user_delete_no_user(mocker):
     spy = mocker.spy(ManageUsers, "delete_user")
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("bar", "", "", "absent")
+    mg.manage_user("bar", "biz", "", "absent")
 
     assert mg.users == {"foo": ["user-admin"]}
     assert spy.call_count == 1
@@ -174,7 +229,7 @@ def test_manage_user_delete_error(mocker):
     spy = mocker.spy(ManageUsers, "delete_user")
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "", "", "absent")
+    mg.manage_user("foo", "biz", "", "absent")
 
     assert spy.call_count == 1
     assert mg.message == "Failed to delete user foo with: Ohh no there was an error!!"
@@ -202,7 +257,7 @@ def test_manage_user_create_happy(mocker):
     spy = mocker.spy(ManageUsers, "create_user")
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "", ["baz", "biz"], "present")
+    mg.manage_user("foo", "biz", ["baz", "biz"], "present")
 
     assert spy.call_count == 1
     assert mg.message == "Created user foo with roles baz biz"
@@ -230,7 +285,7 @@ def test_manage_user_create_error(mocker):
     spy = mocker.spy(ManageUsers, "create_user")
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "", "", "present")
+    mg.manage_user("foo", "biz", "", "present")
 
     assert spy.call_count == 1
     assert mg.message == "Failed to create user foo with: Ohh no there was an error!!"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import shlex
 import subprocess
 from subprocess import run
 
@@ -64,3 +65,13 @@ class ACL:
         except json.decoder.JSONDecodeError:
             # The manage acl commands do not return json, we just care about success or failure.
             return
+
+    def single_token(self, value):
+        # asadm tokenizes input lines using the strategy below, we need to validate that the values
+        # users give us tokenize to single strings, ref:  https://github.com/aerospike/aerospike-admin/blob/06cc2cb5a40e5115c2febb044da47d5a4106ded9/asadm.py#L270
+        lexer = shlex.shlex(value)
+        lexer.wordchars += ".*-:/_{}@"
+
+        if len([t for t in lexer]) != 1:
+            return False
+        return True
