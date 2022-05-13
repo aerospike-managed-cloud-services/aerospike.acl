@@ -1,0 +1,56 @@
+- name: test managing users and roles
+  hosts: localhost
+  vars:
+    roles:
+      - name: "t1-role"
+        state: "present"
+        privs:
+          - "data-admin"
+          - "read"
+          - "write"
+      - name: "t2-role"
+        state: "absent"
+        privs:
+          - "read"
+      - name: "t6"
+        state: "present"
+        privs:
+          - "write"
+    users:
+      - name: "t1"
+        state: "present"
+        password: "foo"
+        roles:
+          - "t1-role"
+      - name: "t2"
+        state: "present"
+        password: "bar"
+        roles:
+          - "t2-role"
+  tasks:
+    - name: Create/Update roles
+      aerospike.acl.roles:
+        asadm_config: "astools.conf"
+        state: "{{ item.state }}"
+        role: "{{ item.name }}"
+        privileges: "{{ item.privs }}"
+      register: test_role_out
+      with_items: "{{ roles }}"
+
+    # - name: dump test roles output
+    #   debug:
+    #     msg: "{{ test_role_out }}"
+
+    - name: Create/Update users
+      aerospike.acl.users:
+        asadm_config: "astools.conf"
+        state: "{{ item.state }}"
+        user: "{{ item.name }}"
+        password: "{{ item.password }}"
+        roles: "{{ item.roles }}"
+      register: test_user_out
+      with_items: "{{ users }}"
+
+    # - name: dump test user output
+    #   debug:
+    #     msg: "{{ test_user_out }}"

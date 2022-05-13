@@ -2,8 +2,7 @@
 
 *.py[co]
 /build/*
-/dist/*
 /.cache/
 /.local/
-/.tox/
 /.coverage
+/test_config/features.conf
