@@ -18,4 +18,5 @@ jobs:
       - name: Setup virtualenv and run the unit tests
         working-directory: ansible/collections/ansible_collections/aerospike/acl
         run: |
+          make format
           make test
