@@ -13,8 +13,8 @@ clean:
 	rm -rf build
 
 env: dev-requirements.txt
-	test -d env || python3.6 -m venv env
-	. env/bin/activate; pip install --upgrade pip; pip install -r dev-requirements.txt
+	test -d env || (python3.6 -m venv env; source env/bin/activate; pip install --upgrade pip)
+	. env/bin/activate; pip install -qq -r dev-requirements.txt
 
 test: env
 	. env/bin/activate; pytest --cov=./plugins tests/unit/plugins/modules/ --cov-fail-under=88
