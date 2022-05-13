@@ -10,11 +10,13 @@ jobs:
           path: ansible/collections/ansible_collections/aerospike/acl
 
       - name: Print the describe-version
+        working-directory: ansible/collections/ansible_collections/aerospike/acl
         run: |
           echo "::notice::output of describe-version for this branch: $(tools/describe-version)"
 
       - name: Check release conditions
         id: check_release_conditions
+        working-directory: ansible/collections/ansible_collections/aerospike/acl
         run: |
           release_version="$(tools/describe-version)"
           if [[ ! "$release_version" =~ ^[0-9]+(\.[0-9]+)*(\.post[0-9]+)?$ ]]; then
@@ -37,6 +39,7 @@ jobs:
           echo "::set-output name=release_artifacts::$(make print-release-artifact)"
 
       - name: Create GitHub release with gh
+        working-directory: ansible/collections/ansible_collections/aerospike/acl
         run: |
           link=$(tools/release \
             "${{ steps.check_release_conditions.outputs.release_version }}" \
