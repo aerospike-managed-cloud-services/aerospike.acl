@@ -7,9 +7,11 @@ from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
     ACLWarning,
 )
 
+
 @pytest.fixture
 def generic_acl():
     return ACL("cfg_path", "user", "password", "instance")
+
 
 class RunMock:
     def __init__(self, cmd, returncode, stdout, stderr):
@@ -110,6 +112,7 @@ def test_parse_result_warning(mocker, generic_acl):
         )
 
     assert "WARNING: this is a warning" in str(err.value)
+
 
 def test_single_token(generic_acl):
     assert generic_acl.single_token("thisshouldnotfail") == True

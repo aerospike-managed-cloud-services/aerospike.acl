@@ -5,17 +5,20 @@ from subprocess import run
 
 
 class ACLError(Exception):
-    ''' asadm has responded with a non-zero return code. '''
+    """asadm has responded with a non-zero return code."""
+
     pass
 
 
 class ACLWarning(Exception):
-    ''' asadm has responded with success but included a warning. '''
+    """asadm has responded with success but included a warning."""
+
     pass
 
 
 class ACL:
-    ''' Run an command with asadm handling errors. '''
+    """Run an command with asadm handling errors."""
+
     def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
         self.asadm_config = asadm_config
         self.asadm_cluster = asadm_cluster
@@ -23,7 +26,7 @@ class ACL:
         self.asadm_password = asadm_password
 
     def execute_cmd(self, command):
-        '''Run the command '''
+        """Run the command"""
         cmd = [
             "asadm",
             f"--config-file={self.asadm_config}",
@@ -44,17 +47,17 @@ class ACL:
         return self._parse_results(p.stdout.decode("utf-8"))
 
     def _parse_error(self, failure):
-        '''
+        """
         Parse out errors only returning the first line which contains the message.
-        '''
+        """
         error = failure.split("\n")[0]
         return error
 
     def _parse_results(self, results):
-        '''
+        """
         Parse results of a succesful asadm command, if we're able to extract json return that
         otherwise return an empty response.
-        '''
+        """
         lines = results.split("\n")
         # A zero return code with warnings is possible, it's better to raise an exception than
         # to continue when this happens.

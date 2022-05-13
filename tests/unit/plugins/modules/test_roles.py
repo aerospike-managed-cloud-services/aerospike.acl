@@ -97,7 +97,11 @@ def test_manage_role_user_validation_failure(mocker):
 
     assert mg.failed == True
     assert mg.changed == False
-    assert mg.message == "Failed to validate role 'not a valid role' see Aerospike docs for valid role characters"
+    assert (
+        mg.message
+        == "Failed to validate role 'not a valid role' see Aerospike docs for valid role characters"
+    )
+
 
 def test_manage_role_priv_validation_failure(mocker):
     def mock_execute_cmd(self, cmd):
@@ -118,7 +122,11 @@ def test_manage_role_priv_validation_failure(mocker):
 
     assert mg.failed == True
     assert mg.changed == False
-    assert mg.message == "Failed to validate privilege 'write^read(scan' for role 'foo' see Aerospike docs for valid privilege characters"
+    assert (
+        mg.message
+        == "Failed to validate privilege 'write^read(scan' for role 'foo' see Aerospike docs for valid privilege characters"
+    )
+
 
 def test_manage_role_delete_happy(mocker):
     commands = []

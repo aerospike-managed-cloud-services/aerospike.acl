@@ -124,7 +124,11 @@ def test_manage_user_user_validation_failure(mocker):
 
     assert mg.failed == True
     assert mg.changed == False
-    assert mg.message == "Failed to validate user 'not a valid user' see Aerospike docs for valid name characters"
+    assert (
+        mg.message
+        == "Failed to validate user 'not a valid user' see Aerospike docs for valid name characters"
+    )
+
 
 def test_manage_user_password_validation_failure(mocker):
     def mock_execute_cmd(self, cmd):
@@ -138,11 +142,15 @@ def test_manage_user_password_validation_failure(mocker):
     )
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "not^a(valid$password", "", "absent")
+    mg.manage_user("foo", "not^a(valid$password", "", "present")
 
     assert mg.failed == True
     assert mg.changed == False
-    assert mg.message == "Failed to validate password 'not^a(valid$password' for user 'foo' see Aerospike docs for valid password characters"
+    assert (
+        mg.message
+        == "Failed to validate password 'not^a(valid$password' for user 'foo' see Aerospike docs for valid password characters"
+    )
+
 
 def test_manage_user_role_validation_failure(mocker):
     def mock_execute_cmd(self, cmd):
@@ -156,11 +164,14 @@ def test_manage_user_role_validation_failure(mocker):
     )
 
     mg = users.ManageUsers("", "", "", "")
-    mg.manage_user("foo", "bix", ['not^a(valid!role'], "absent")
+    mg.manage_user("foo", "bix", ["not^a(valid!role"], "absent")
 
     assert mg.failed == True
     assert mg.changed == False
-    assert mg.message == "Failed to validate role 'not^a(valid!role' for user 'foo' see Aerospike docs for valid role characters"
+    assert (
+        mg.message
+        == "Failed to validate role 'not^a(valid!role' for user 'foo' see Aerospike docs for valid role characters"
+    )
 
 
 def test_manage_user_delete_happy(mocker):
