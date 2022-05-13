@@ -3,11 +3,7 @@
 SHELL				:= /usr/bin/env bash
 DOCKER				:= docker
 
-.PHONY: clean test build format start-aerospike stop-aerospike
-
-build:
-	ansible-galaxy collection build --output-path build/
-	@ls build/
+.PHONY: clean test build format start-aerospike stop-aerospike print-release-artifact
 
 clean:
 	rm -rf build
@@ -15,6 +11,12 @@ clean:
 env: dev-requirements.txt
 	test -d env || (python3.6 -m venv env; source env/bin/activate; pip install --upgrade pip)
 	. env/bin/activate; pip install -qq -r dev-requirements.txt
+
+build: env
+	. env/bin/activate; ansible-galaxy collection build --output-path build/
+
+print-release-artifact:
+	@echo "build/$$(ls build/)"
 
 test: env
 	. env/bin/activate; pytest --cov=./plugins tests/unit/plugins/modules/ --cov-fail-under=88
