@@ -19,8 +19,8 @@ env: dev-requirements.txt
 test: env
 	. env/bin/activate; pytest --cov=./plugins tests/unit/plugins/modules/ --cov-fail-under=88
 
-format:
-	black -l 100 plugins tests
+format: env
+	. env/bin/activate; black -l 100 plugins tests
 
 start-aerospike:
 	$(DOCKER) run -d --name aerospike -p 3000-3002:3000-3002 -v "$$(pwd)/test_config:/opt/aerospike/etc" aerospike:ee-6.0.0.0 --config-file /opt/aerospike/etc/aerospike.conf
