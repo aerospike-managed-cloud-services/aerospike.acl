@@ -21,6 +21,12 @@ options:
         required: false
         type: str
         default: test
+    asadm_auth_mod:
+        description: How to authenticate.
+        required: false
+        type: str
+        default: INTERNAL
+        choices: [ INTERNAL, EXTERNAL, PKI, EXTERNAL_INSECURE ]
     asadm_user:
         description: The user to run asadm with.
         required: false
@@ -129,8 +135,8 @@ class UserPasswordUpdateError(Exception):
 class ManageUsers(ACL):
     """Create, update and delete Aerospike users."""
 
-    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
-        super().__init__(asadm_config, asadm_cluster, asadm_user, asadm_password)
+    def __init__(self, asadm_config, asadm_cluster, asadm_auth_mode, asadm_user, asadm_password):
+        super().__init__(asadm_config, asadm_cluster, asadm_auth_mode, asadm_user, asadm_password)
         self.changed = False
         self.failed = False
         self.message = ""
@@ -270,6 +276,7 @@ def run_module():
     module_args = dict(
         asadm_config=dict(type="str", required=False, default="/etc/aerospike/astools.conf"),
         asadm_cluster=dict(type="str", required=False, default="test"),
+        asadm_auth_mode=dict(type="str", choices=["INTERNAL", "EXTERNAL", "PKI", "EXTERNAL_INSECURE"], required=False, default="INTERNAL"),
         asadm_user=dict(type="str", required=False, default="admin"),
         asadm_password=dict(type="str", required=False, default="admin"),
         user=dict(type="str", required=True),
@@ -300,6 +307,7 @@ def run_module():
     mg = ManageUsers(
         module.params["asadm_config"],
         module.params["asadm_cluster"],
+        module.params["asadm_auth_mode"],
         module.params["asadm_user"],
         module.params["asadm_password"],
     )
