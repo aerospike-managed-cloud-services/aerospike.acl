@@ -1,0 +1,8 @@
+{
+  "ANSIBLE_MODULE_ARGS": {
+    "asadm_config": "test_conf/astools.conf",
+    "role": "t1-role",
+    "state": "present",
+    "privileges": ["data-admin", "read", "write"]
+  }
+}
