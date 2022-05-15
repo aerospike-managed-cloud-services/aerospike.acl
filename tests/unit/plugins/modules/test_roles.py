@@ -23,7 +23,7 @@ def test_get_roles_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     assert mg.roles == {"test-role": ["user-admin"]}
     assert mg.failed == False
@@ -41,7 +41,7 @@ def test_get_roles_null_privilege(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     assert mg.roles == {"test-role": []}
     assert mg.failed == False
@@ -57,7 +57,7 @@ def test_get_roles_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     assert mg.failed == True
     assert mg.message == "Failed to get roles with: Ohh no there was an error!!"
@@ -72,7 +72,7 @@ def test_get_roles_warning(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     assert mg.failed == True
     assert mg.message == "Failed to get roles with: Ohh no there was an error!!"
@@ -92,7 +92,7 @@ def test_manage_role_user_validation_failure(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("not a valid role", ["write"], "absent")
 
     assert mg.failed == True
@@ -117,7 +117,7 @@ def test_manage_role_priv_validation_failure(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("foo", ["write^read(scan"], "absent")
 
     assert mg.failed == True
@@ -145,7 +145,7 @@ def test_manage_role_delete_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("foo", [], "absent")
 
     assert mg.roles == {"foo": ["role-admin"]}
@@ -172,7 +172,7 @@ def test_manage_role_delete_no_role(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("bar", [], "absent")
 
     assert mg.roles == {"foo": ["role-admin"]}
@@ -200,7 +200,7 @@ def test_manage_role_delete_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("foo", [], "absent")
 
     assert mg.message == "Failed to delete role foo with: Ohh no there was an error!!"
@@ -225,7 +225,7 @@ def test_manage_role_create_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("fuzz", ["baz", "biz"], "present")
 
     assert commands == [
@@ -256,7 +256,7 @@ def test_manage_role_create_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("fuzz", ["baz", "biz"], "present")
 
     assert commands == [
@@ -285,7 +285,7 @@ def test_manage_role_update_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("foo", ["a", "b", "c"], "present")
 
     assert commands == [
@@ -322,7 +322,7 @@ def test_manage_role_update_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.manage_role("foo", ["a", "b", "c"], "present")
 
     assert mg.message == "Failed to update role foo with: Ohh no there was an error!!"
@@ -347,7 +347,7 @@ def test_delete_role_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.delete_role("foo")
 
     assert commands == [
@@ -376,7 +376,7 @@ def test_delete_role_happy_does_not_exist(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.delete_role("biz")
 
     assert commands == [
@@ -406,7 +406,7 @@ def test_delete_role_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     with pytest.raises(RoleDeleteError) as err:
         mg.delete_role("foo")
@@ -437,7 +437,7 @@ def test_create_role_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     mg.create_role("biz", ["a", "b", "c"])
 
     assert commands == [
@@ -470,7 +470,7 @@ def test_create_role_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     with pytest.raises(RoleCreateError) as err:
         mg.create_role("foo", [])
@@ -502,7 +502,7 @@ def test_privileges_to_grant_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     grants = mg.privileges_to_grant("foo", ["1", "2", "e"])
 
     assert grants == ["1", "e"]
@@ -526,7 +526,7 @@ def test_privileges_to_revoke_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
     revokes = mg.privileges_to_revoke("foo", ["1", "2", "e"])
 
     assert revokes == ["a", "c", "d"]
@@ -549,7 +549,7 @@ def test_update_role_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     mg.update_privs("foo", ["a", "b"], ["role-admin"])
 
@@ -583,7 +583,7 @@ def test_update_privs_error_grants(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     with pytest.raises(RoleUpdateError) as err:
         mg.update_privs("foo", ["a", "b"], ["role-admin"])
@@ -616,7 +616,7 @@ def test_update_privs_error_revoke(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     with pytest.raises(RoleUpdateError) as err:
         mg.update_privs("foo", ["a", "b"], ["role-admin"])
@@ -649,7 +649,7 @@ def test_update_role_happy_no_updates(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     mg.update_privs("foo", [], [])
 
@@ -678,7 +678,7 @@ def test_update_role_happy_grants(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     mg.update_privs("foo", ["a", "b"], [])
 
@@ -709,7 +709,7 @@ def test_update_role_happy_revokes(mocker):
         mock_execute_cmd,
     )
 
-    mg = roles.ManageRoles("", "", "", "")
+    mg = roles.ManageRoles("", "", "", "", "")
 
     mg.update_privs("foo", [], ["a", "b"])
 
