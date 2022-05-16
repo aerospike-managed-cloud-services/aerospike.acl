@@ -19,9 +19,10 @@ class ACLWarning(Exception):
 class ACL:
     """Run an command with asadm handling errors."""
 
-    def __init__(self, asadm_config, asadm_cluster, asadm_user, asadm_password):
+    def __init__(self, asadm_config, asadm_cluster, asadm_auth_mode, asadm_user, asadm_password):
         self.asadm_config = asadm_config
         self.asadm_cluster = asadm_cluster
+        self.asadm_auth_mode = asadm_auth_mode
         self.asadm_user = asadm_user
         self.asadm_password = asadm_password
 
@@ -30,6 +31,7 @@ class ACL:
         cmd = [
             "asadm",
             f"--config-file={self.asadm_config}",
+            f"--auth={self.asadm_auth_mode}",
             f"--user={self.asadm_user}",
             f"--password={self.asadm_password}",
             f"--instance={self.asadm_cluster}",
