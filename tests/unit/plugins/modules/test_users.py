@@ -30,7 +30,7 @@ def test_get_users_happy_path(mocker):
         mock_manage_user,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("", "", "", "")
 
     assert mg.users == {"test-user": ["user-admin"]}
@@ -54,7 +54,7 @@ def test_get_users_null_roles(mocker):
         mock_manage_user,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("", "", "", "")
 
     assert mg.users == {"test-user": []}
@@ -78,7 +78,7 @@ def test_get_users_acl_error(mocker):
         mock_manage_user,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("", "", "", "")
 
     assert mg.message == "Failed to get users with: Ohh no there was an error!!"
@@ -101,7 +101,7 @@ def test_get_users_acl_warning(mocker):
         mock_manage_user,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("", "", "", "")
 
     assert mg.message == "Failed to get users with: Ohh no there was a warning!!"
@@ -119,7 +119,7 @@ def test_manage_user_user_validation_failure(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("not a valid user", "biz", "", "absent")
 
     assert mg.failed == True
@@ -141,7 +141,7 @@ def test_manage_user_password_validation_failure(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "not^a(valid$password", "", "present")
 
     assert mg.failed == True
@@ -163,7 +163,7 @@ def test_manage_user_role_validation_failure(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "bix", ["not^a(valid!role"], "absent")
 
     assert mg.failed == True
@@ -187,7 +187,7 @@ def test_manage_user_delete_happy(mocker):
 
     spy = mocker.spy(ManageUsers, "delete_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", "", "absent")
 
     assert mg.users == {"foo": ["user-admin"]}
@@ -210,7 +210,7 @@ def test_manage_user_delete_no_user(mocker):
 
     spy = mocker.spy(ManageUsers, "delete_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("bar", "biz", "", "absent")
 
     assert mg.users == {"foo": ["user-admin"]}
@@ -239,7 +239,7 @@ def test_manage_user_delete_error(mocker):
 
     spy = mocker.spy(ManageUsers, "delete_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", "", "absent")
 
     assert spy.call_count == 1
@@ -267,7 +267,7 @@ def test_manage_user_create_happy(mocker):
 
     spy = mocker.spy(ManageUsers, "create_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", ["baz", "biz"], "present")
 
     assert spy.call_count == 1
@@ -295,7 +295,7 @@ def test_manage_user_create_error(mocker):
 
     spy = mocker.spy(ManageUsers, "create_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", "", "present")
 
     assert spy.call_count == 1
@@ -319,7 +319,7 @@ def test_manage_user_update_happy(mocker):
 
     spy = mocker.spy(ManageUsers, "update_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", ["a", "b", "c"], "present")
 
     assert spy.call_count == 1
@@ -346,7 +346,7 @@ def test_manage_user_update_error_password(mocker):
 
     spy = mocker.spy(ManageUsers, "update_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", ["a", "b", "c"], "present")
 
     assert spy.call_count == 1
@@ -373,7 +373,7 @@ def test_manage_user_update_error_role(mocker):
 
     spy = mocker.spy(ManageUsers, "update_user")
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", ["a", "b", "c"], "present")
 
     assert spy.call_count == 1
@@ -396,7 +396,7 @@ def test_delete_user_happy_exists(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.delete_user("foo")
 
     assert mg.message == "Deleted user foo"
@@ -414,7 +414,7 @@ def test_delete_user_happy_does_not_exist(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.delete_user("foo")
 
     assert mg.message == "User foo does not exist so can't be deleted"
@@ -434,7 +434,7 @@ def test_delete_user_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
 
     with pytest.raises(UserDeleteError) as err:
         mg.delete_user("foo")
@@ -458,7 +458,7 @@ def test_create_user_happy_exists(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.create_user("bar", "", ["1", "2", "3"])
 
     assert mg.message == "Created user bar with roles 1 2 3"
@@ -478,7 +478,7 @@ def test_create_user_error(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
 
     with pytest.raises(UserCreateError) as err:
         mg.create_user("foo", "", [])
@@ -502,7 +502,7 @@ def test_roles_to_grant_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     grants = mg.roles_to_grant("foo", ["1", "2", "e"])
 
     assert grants == ["1", "e"]
@@ -522,7 +522,7 @@ def test_roles_to_revoke_happy(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     revokes = mg.roles_to_revoke("foo", ["1", "2", "e"])
 
     assert revokes == ["a", "c", "d"]
@@ -545,7 +545,7 @@ def test_update_user_happy_all(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.update_user("bar", "pass", ["1", "3"], ["c", "d"])
 
     assert commands == [
@@ -577,7 +577,7 @@ def test_update_user_happy_no_role_changes(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.update_user("bar", "pass", [], [])
 
     assert commands == [
@@ -607,7 +607,7 @@ def test_update_user_happy_grants(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.update_user("bar", "pass", ["a"], [])
 
     assert commands == [
@@ -637,7 +637,7 @@ def test_update_user_happy_revokes(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
     mg.update_user("bar", "pass", [], ["a"])
 
     assert commands == [
@@ -666,7 +666,7 @@ def test_update_user_error_role_update_grants(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
 
     with pytest.raises(UserRoleUpdateError) as err:
         mg.update_user("foo", "", ["a"], [])
@@ -693,7 +693,7 @@ def test_update_user_error_role_update_revokes(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
 
     with pytest.raises(UserRoleUpdateError) as err:
         mg.update_user("foo", "", [], ["a"])
@@ -720,7 +720,7 @@ def test_update_user_error_password(mocker):
         mock_execute_cmd,
     )
 
-    mg = users.ManageUsers("", "", "", "")
+    mg = users.ManageUsers("", "", "", "", "")
 
     with pytest.raises(UserPasswordUpdateError) as err:
         mg.update_user("foo", "", [], [])

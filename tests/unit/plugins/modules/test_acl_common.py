@@ -10,7 +10,7 @@ from ansible_collections.aerospike.acl.plugins.module_utils.acl_common import (
 
 @pytest.fixture
 def generic_acl():
-    return ACL("cfg_path", "user", "password", "instance")
+    return ACL("cfg_path", "cluster", "INTERNAL", "user", "password")
 
 
 class RunMock:
@@ -37,9 +37,10 @@ def test_execute_cmd_happy(mocker, generic_acl):
     assert commands[0] == [
         "asadm",
         "--config-file=cfg_path",
-        "--user=password",
-        "--password=instance",
-        "--instance=user",
+        "--auth=INTERNAL",
+        "--user=user",
+        "--password=password",
+        "--instance=cluster",
         "-e",
         "this is a command",
         "--json",
@@ -65,9 +66,10 @@ def test_execute_cmd_error(mocker, generic_acl):
     assert commands[0] == [
         "asadm",
         "--config-file=cfg_path",
-        "--user=password",
-        "--password=instance",
-        "--instance=user",
+        "--auth=INTERNAL",
+        "--user=user",
+        "--password=password",
+        "--instance=cluster",
         "-e",
         "this is a command",
         "--json",
