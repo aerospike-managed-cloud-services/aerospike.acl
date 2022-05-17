@@ -21,7 +21,7 @@ options:
         required: false
         type: str
         default: test
-    asadm_auth_mod:
+    asadm_auth_mode:
         description: How to authenticate.
         required: false
         type: str
