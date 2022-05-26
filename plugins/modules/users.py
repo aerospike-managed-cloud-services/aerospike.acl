@@ -222,7 +222,7 @@ class ManageUsers(ACL):
         """Create a user."""
         try:
             self.execute_cmd(
-                f"enable; manage acl create user {user} password {password} roles {roles}"
+                f"enable; manage acl create user {user} password {password} roles {' '.join(roles)}"
             )
             self.changed = True
         except (ACLError, ACLWarning) as err:
