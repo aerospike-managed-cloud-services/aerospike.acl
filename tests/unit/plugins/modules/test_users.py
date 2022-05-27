@@ -445,7 +445,9 @@ def test_delete_user_error(mocker):
 
 
 def test_create_user_happy_exists(mocker):
+    commands = []
     def mock_execute_cmd(self, cmd):
+        commands.append(cmd)
         if cmd == "show users":
             return {
                 "groups": [
@@ -462,6 +464,7 @@ def test_create_user_happy_exists(mocker):
     mg.create_user("bar", "", ["1", "2", "3"])
 
     assert mg.message == "Created user bar with roles 1 2 3"
+    assert commands == ["show users", "enable; manage acl create user bar password  roles 1 2 3"]
     assert mg.failed == False
     assert mg.changed == True
 
