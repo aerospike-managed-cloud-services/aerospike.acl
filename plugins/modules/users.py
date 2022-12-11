@@ -189,6 +189,8 @@ class ManageUsers(ACL):
         try:
             if state == "absent":
                 return self.delete_user(user)
+            if state == "check":
+                return self.user_exists(user)
             if user not in self.users:
                 return self.create_user(user, password, roles)
 
@@ -268,6 +270,15 @@ class ManageUsers(ACL):
         if not grants and revokes:
             self.message = f"Updated user {user} password and revoked roles {' '.join(revokes)}"
 
+
+    def user_exists(self, user):
+        """Return true if user exists user."""
+        self.failed = False
+        self.message = f"User {user} doesn't exist"
+        if user in self.users:
+            self.message = f"User {user} exist"
+            return True
+        return False
 
 def run_module():
     """This is the interface to ansible code, from it we run the manage_users method."""
