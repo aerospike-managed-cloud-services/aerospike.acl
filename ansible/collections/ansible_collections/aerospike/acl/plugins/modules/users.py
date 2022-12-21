@@ -191,7 +191,7 @@ class ManageUsers(ACL):
                 return self.delete_user(user)
             if user not in self.users:
                 return self.create_user(user, password, roles)
-           if state == "create_only":
+            if state == "create_only":
                 self.failed = False
                 self.message = f"User {user} exists"
                 return True

@@ -322,7 +322,7 @@ def test_manage_user_create_only_happy(mocker):
     mg = users.ManageUsers("", "", "", "", "")
     mg.manage_user("foo", "biz", ["a", "b", "c"], "create_only")
 
-    assert spy.call_count == 1
+    assert spy.call_count == 0
     assert mg.message == "User foo exists"
     assert mg.failed == False
     assert mg.changed == False
