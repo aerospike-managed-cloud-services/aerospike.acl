@@ -13,7 +13,7 @@ jobs:
 
       - uses: actions/setup-python@v3
         with:
-          python-version: "3.6"
+          python-version: "3.10.8"
 
       - name: Setup virtualenv and run the unit tests
         working-directory: ansible/collections/ansible_collections/aerospike/acl
