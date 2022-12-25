@@ -42,7 +42,7 @@ options:
         required: false
         type: list
         default: present
-        choices: [ present, absent ]
+        choices: [ present, absent, create_only ]
     user:
         description: The user to operate on.
         required: true
