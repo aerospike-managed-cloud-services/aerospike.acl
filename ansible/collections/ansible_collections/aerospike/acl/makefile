@@ -9,7 +9,7 @@ clean:
 	rm -rf build
 
 env: dev-requirements.txt
-	test -d env || (python3 -m venv env; source env/bin/activate; pip install --upgrade pip)
+	test -d env || (python3.10.8 -m venv env; source env/bin/activate; pip install --upgrade pip)
 	. env/bin/activate; pip install -qq -r dev-requirements.txt
 
 build: env
