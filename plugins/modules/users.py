@@ -42,7 +42,7 @@ options:
         required: false
         type: list
         default: present
-        choices: [ present, absent ]
+        choices: [ present, absent, create_only ]
     user:
         description: The user to operate on.
         required: true
@@ -191,6 +191,10 @@ class ManageUsers(ACL):
                 return self.delete_user(user)
             if user not in self.users:
                 return self.create_user(user, password, roles)
+            if state == "create_only":
+                self.failed = False
+                self.message = f"User {user} exists"
+                return True
 
             grants = self.roles_to_grant(user, roles)
             revokes = self.roles_to_revoke(user, roles)
