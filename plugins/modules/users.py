@@ -192,6 +192,7 @@ class ManageUsers(ACL):
             if user not in self.users:
                 return self.create_user(user, password, roles)
             if state == "create_only":
+                self.changed = False
                 self.failed = False
                 self.message = f"User {user} exists"
                 return True
@@ -285,7 +286,7 @@ def run_module():
         asadm_password=dict(type="str", required=False, default="admin"),
         user=dict(type="str", required=True),
         password=dict(type="str", required=False),
-        state=dict(type="str", required=False, choices=["present", "absent"], default="present"),
+        state=dict(type="str", required=False, choices=["present", "absent", "create_only"], default="present"),
         roles=dict(type="list", required=False, default=[]),
     )
 
