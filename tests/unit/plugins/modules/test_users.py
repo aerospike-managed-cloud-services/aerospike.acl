@@ -304,6 +304,30 @@ def test_manage_user_create_error(mocker):
     assert mg.changed == False
 
 
+def test_manage_user_create_only_happy(mocker):
+
+    def mock_execute_cmd(self, cmd):
+        return {
+            "groups": [
+                {"records": [{"User": {"raw": "foo"}, "Roles": {"raw": ["a", "2", "c", "d"]}}]}
+            ]
+        }
+
+    mocker.patch(
+        "ansible_collections.aerospike.acl.plugins.module_utils.acl_common.ACL.execute_cmd",
+        mock_execute_cmd,
+    )
+
+    spy = mocker.spy(ManageUsers, "create_user")
+
+    mg = users.ManageUsers("", "", "", "", "")
+    mg.manage_user("foo", "biz", ["a", "b", "c"], "create_only")
+
+    assert spy.call_count == 0
+    assert mg.message == "User foo exists"
+    assert mg.failed == False
+    assert mg.changed == False
+
 def test_manage_user_update_happy(mocker):
     def mock_execute_cmd(self, cmd):
         return {
