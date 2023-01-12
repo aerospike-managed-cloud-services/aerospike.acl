@@ -42,7 +42,7 @@ options:
         required: false
         type: list
         default: present
-        choices: [ present, absent ]
+        choices: [ present, absent, create_only ]
     user:
         description: The user to operate on.
         required: true
@@ -191,6 +191,11 @@ class ManageUsers(ACL):
                 return self.delete_user(user)
             if user not in self.users:
                 return self.create_user(user, password, roles)
+            if state == "create_only":
+                self.changed = False
+                self.failed = False
+                self.message = f"User {user} exists"
+                return True
 
             grants = self.roles_to_grant(user, roles)
             revokes = self.roles_to_revoke(user, roles)
@@ -281,7 +286,7 @@ def run_module():
         asadm_password=dict(type="str", required=False, default="admin"),
         user=dict(type="str", required=True),
         password=dict(type="str", required=False),
-        state=dict(type="str", required=False, choices=["present", "absent"], default="present"),
+        state=dict(type="str", required=False, choices=["present", "absent", "create_only"], default="present"),
         roles=dict(type="list", required=False, default=[]),
     )
 
