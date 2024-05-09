@@ -50,9 +50,9 @@ class ACL:
 
     def _parse_error(self, failure):
         """
-        Parse out errors only returning the first line which contains the message.
+        Parse out errors
         """
-        error = failure.split("\n")[0]
+        error = failure
         return error
 
     def _parse_results(self, results):
