@@ -52,8 +52,8 @@ class ACL:
         """
         Parse out errors
         """
-        error = failure
-        return error
+        
+        return failure
 
     def _parse_results(self, results):
         """
