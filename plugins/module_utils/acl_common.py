@@ -45,16 +45,9 @@ class ACL:
             stderr=subprocess.STDOUT,
         )
         if p.returncode != 0:
-            raise ACLError(self._parse_error(p.stdout.decode("utf-8")))
+            raise ACLError(p.stdout.decode("utf-8"))
         return self._parse_results(p.stdout.decode("utf-8"))
-
-    def _parse_error(self, failure):
-        """
-        Parse out errors only returning the first line which contains the message.
-        """
-        error = failure.split("\n")[0]
-        return error
-
+   
     def _parse_results(self, results):
         """
         Parse results of a succesful asadm command, if we're able to extract json return that
